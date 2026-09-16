@@ -42,9 +42,16 @@ jobs:
       - name: Build (Windows)
         if: runner.os == 'Windows'
         working-directory: desktop
+        shell: pwsh
         run: |
           pyinstaller --onefile --windowed --name InsultSimulator --add-data "index.html;." app.py
-          Move-Item dist/InsultSimulator.exe ../InsultSimulator.exe
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+            $env:Path += ";C:\Program Files (x86)\NSIS"
+          }
+          makensis installer.nsi
+          Copy-Item dist\InsultSimulator.exe ..\InsultSimulator.exe
+          Copy-Item dist\InsultSimulator-Setup.exe ..\InsultSimulator-Setup.exe
 
       - name: Build (macOS)
         if: runner.os == 'macOS'
@@ -74,5 +81,6 @@ jobs:
           name: insult-${{ matrix.os }}
           path: |
             InsultSimulator.exe
+            InsultSimulator-Setup.exe
             InsultSimulator-macOS.zip
             InsultSimulator-Linux.zip
