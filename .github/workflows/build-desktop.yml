@@ -1,0 +1,78 @@
+name: Build Desktop Apps
+
+on:
+  push:
+    paths:
+      - 'desktop/**'
+      - 'docs/**'
+      - '.github/workflows/build-desktop.yml'
+  workflow_dispatch:
+
+env:
+  APP_VERSION: 1.0.0
+
+jobs:
+  desktop:
+    name: Desktop (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pywebview pyinstaller
+        shell: bash
+
+      - name: Install Linux webview libs
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-0 libgtk-3-0
+        shell: bash
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        run: |
+          pyinstaller --onefile --windowed --name InsultSimulator --add-data "index.html;." app.py
+          Move-Item dist/InsultSimulator.exe ../InsultSimulator.exe
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        working-directory: desktop
+        run: |
+          pyinstaller --onefile --windowed --name InsultSimulator --add-data "index.html:." app.py
+          mv dist/InsultSimulator ../InsultSimulator
+          cd ..
+          zip -r InsultSimulator-macOS.zip InsultSimulator
+          rm InsultSimulator
+        shell: bash
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        working-directory: desktop
+        run: |
+          pyinstaller --onefile --windowed --name InsultSimulator --add-data "index.html:." app.py
+          mv dist/InsultSimulator ../InsultSimulator
+          cd ..
+          zip -r InsultSimulator-Linux.zip InsultSimulator
+          rm InsultSimulator
+        shell: bash
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: insult-${{ matrix.os }}
+          path: |
+            InsultSimulator.exe
+            InsultSimulator-macOS.zip
+            InsultSimulator-Linux.zip

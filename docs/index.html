@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>嘴臭模擬器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#151520;--red:#ef4444;--orange:#f97316;--yellow:#eab308;--accent:#22d3ee;--muted:#64748b;--text:#e2e8f0;--radius:16px}
+html,body{height:100%;font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+#app{max-width:520px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+header{text-align:center;padding:14px 0 6px}
+header h1{font-size:1.3rem;color:var(--red);letter-spacing:2px}
+header p{font-size:.75rem;color:var(--muted);margin-top:2px}
+.rage-bar{height:6px;background:#1e1e2e;border-radius:3px;margin:0 16px 8px;overflow:hidden}
+.rage-fill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--orange),var(--red));border-radius:3px;width:0;transition:width .6s ease}
+#chat{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth}
+.msg{max-width:85%;padding:10px 14px;border-radius:var(--radius);font-size:.92rem;line-height:1.55;animation:popIn .25s ease}
+.msg.user{align-self:flex-end;background:var(--accent);color:#000;font-weight:500;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--card);color:var(--text);border:1px solid #2a2a3a;border-bottom-left-radius:4px;position:relative;overflow:hidden}
+.msg.bot::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red);border-radius:3px 0 0 3px}
+.msg.bot.furious::before{background:var(--red);animation:flashRed .3s infinite}
+.msg.bot.surrender{border-color:var(--accent);text-align:center;font-style:italic;max-width:90%;align-self:center;background:#0d1b2a;border-color:var(--accent);color:var(--accent)}
+@keyframes popIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes flashRed{50%{opacity:.4}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.input-row{display:flex;gap:6px;padding:12px 16px;background:rgba(10,10,15,.95);border-top:1px solid #1a1a2e}
+.input-row input{flex:1;background:#1a1a2e;border:1px solid #2a2a3a;border-radius:12px;padding:12px 14px;color:var(--text);font-size:.95rem;outline:none;transition:border-color .2s}
+.input-row input:focus{border-color:var(--accent)}
+.input-row button{background:var(--red);border:none;border-radius:12px;padding:12px 18px;color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .15s}
+.input-row button:active{transform:scale(.95)}
+.input-row button:disabled{opacity:.3;cursor:not-allowed}
+.surrender-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;animation:popIn .5s ease;z-index:100}
+.surrender-overlay h2{font-size:1.8rem;color:var(--accent);margin-bottom:10px}
+.surrender-overlay p{color:var(--muted);font-size:.95rem;margin-bottom:20px;text-align:center;padding:0 20px;line-height:1.6}
+.surrender-overlay button{background:var(--red);border:none;border-radius:12px;padding:14px 32px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+.surrender-overlay button:active{transform:scale(.96)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>🔥 嘴臭模擬器 🔥</h1>
+    <p>來罵我啊，看誰先崩潰</p>
+  </header>
+  <div class="rage-bar"><div class="rage-fill" id="rageFill"></div></div>
+  <div id="chat"></div>
+  <div class="input-row">
+    <input id="userInput" type="text" placeholder="想說什麼髒話..." enterkeyhint="send" autocomplete="off">
+    <button id="sendBtn" onclick="userSend()">罵！</button>
+  </div>
+</div>
+
+<script>
+var rage=0,rounds=0,surrendered=false,cooldown=false;
+var chat=document.getElementById('chat');
+var input=document.getElementById('userInput');
+var rageFill=document.getElementById('rageFill');
+var sendBtn=document.getElementById('sendBtn');
+
+var L1=[
+  '哦？你說什麼？我沒聽清，再說一次？',
+  '這就是你的實力？好失望啊⋯⋯',
+  '你是不是今天忘吃藥了？',
+  '嗯⋯⋯然後呢？沒了？',
+  '你罵人的功力跟你的人生一樣蒼白',
+  '呵，就這？',
+  '你這話語攻擊性不強，侮辱性倒是挺低的',
+  '你是不是在練習罵人啊？看得出來很認真',
+  '沒事，我們慢慢來，你會進步的',
+  '這是我聽過最無趣的髒話，謝謝'
+];
+var L2=[
+  '你在講你自己吧？照照鏡子好嗎',
+  '你腦子是不是被門夾過？還夾了好幾次',
+  '你這智商，連我家的掃地機器人都比你聰明',
+  '你的人生跟你打的字一樣——充滿錯別字',
+  '你是不是覺得自己很幽默？全世界都在笑，不是因為你',
+  '你這個廢物點心，連罵人都罵不好',
+  '你媽當初是不是把你的智商當便當帶走了',
+  '你這張嘴除了吃東西還能幹嘛？',
+  '你是不是以為自己很厲害？醒醒吧孩子',
+  '你的人生就是個笑話，只是沒人笑得出來',
+  '你罵我的這句話連我奶奶都會說，而且她已經過世十年了',
+  '你腦容量大概跟金魚差不多吧，同情你'
+];
+var L3=[
+  '你這種貨色也敢出來罵人？回家種田吧',
+  '你是不是投胎的時候忘記帶腦子了？',
+  '你的人生就是一場災難片，只是沒有觀眾',
+  '你這個 loser，loser 都比你有格調',
+  '你是不是覺得自己很了不起？全世界都在等你笑話呢',
+  '你這種人連呼吸都在浪費氧氣',
+  '你這張臉就是最好的避孕藥',
+  '你媽當初生你的時候是不是難過到哭？',
+  '你的人生就像你的腦容量一樣——一片空白',
+  '你是不是以為自己很有存在感？其實沒人在乎你',
+  '你這種廢物連當配角的資格都沒有',
+  '你這輩子最大的成就就是讓你媽失望'
+];
+var L4=[
+  '你他媽的算什麼東西？連螞蟻都比你有尊嚴',
+  '你是不是腦殘啊？你全家都腦殘',
+  '你這個廢物，活著就是浪費社會資源',
+  '你媽是不是生你的時候難過到哭？你這種貨色',
+  '你的人生就是一坨屎，而且還是稀的',
+  '你是不是覺得自己很厲害？醒醒吧，你連個垃圾都不如',
+  '你這種人活著就是個錯誤，早該被流掉了',
+  '你是不是以為自己很幽默？你媽看到你都想哭',
+  '你這種廢物連當loser都當不好',
+  '你這輩子最大的成就就是讓人想打你',
+  '你是不是覺得自己很特別？其實你連個屁都不如',
+  '你是不是覺得自己很可愛？你媽看到你都想吐'
+];
+var surrenderPhrases=[
+  '算了算了，我投降了⋯⋯你贏了⋯⋯',
+  '我不行了⋯⋯你太厲害了⋯⋯饒了我吧⋯⋯',
+  '好吧我承認⋯⋯你罵人的功力⋯⋯把我打敗了⋯⋯',
+  '停！我認輸⋯⋯真的不行了⋯⋯',
+  '好啦好啦⋯⋯我輸了⋯⋯你是最厲害的⋯⋯',
+  '我投降⋯⋯你太強了⋯⋯我會記住今天的⋯⋯',
+  '夠了⋯⋯我受不了了⋯⋯你贏了⋯⋯我認輸⋯⋯',
+  '嗚嗚⋯⋯我不罵了⋯⋯你太狠了⋯⋯饒了我吧⋯⋯'
+];
+var opening='哎喲，來了一個不怕死的？來吧，盡量罵，看誰先倒下 🔥';
+var furious='你是不是瘋了？？罵上癮了是吧？？';
+
+function addMsg(text,cls){
+  var d=document.createElement('div');
+  d.className='msg '+cls;
+  d.textContent=text;
+  chat.appendChild(d);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function getResponse(){
+  var level;
+  if(rounds<=3) level=L1;
+  else if(rounds<=6) level=L2;
+  else if(rounds<=10) level=L3;
+  else level=L4;
+  return level[Math.floor(Math.random()*level.length)];
+}
+
+function updateRage(){
+  var pct=Math.min(rage/30,1)*100;
+  rageFill.style.width=pct+'%';
+  if(rage>20) rageFill.parentElement.style.animation='pulse .8s infinite';
+}
+
+function checkSurrender(){
+  if(surrendered) return false;
+  if(rounds<5) return false;
+  var chance=Math.min(0.15+(rounds-5)*0.05,0.7);
+  return Math.random()<chance;
+}
+
+function userSend(){
+  if(cooldown||surrendered) return;
+  var text=input.value.trim();
+  if(!text) return;
+  input.value='';
+  addMsg(text,'user');
+  rounds++;
+  rage=Math.min(rage+Math.floor(Math.random()*4)+2,40);
+  updateRage();
+  cooldown=true;
+  sendBtn.disabled=true;
+  input.disabled=true;
+
+  setTimeout(function(){
+    if(checkSurrender()){
+      surrendered=true;
+      addMsg(surrenderPhrases[Math.floor(Math.random()*surrenderPhrases.length)],'bot surrender');
+      showOverlay();
+      return;
+    }
+    var resp=getResponse();
+    var cls='bot';
+    if(rounds>8) cls+=' furious';
+    addMsg(resp,cls);
+    cooldown=false;
+    sendBtn.disabled=false;
+    input.disabled=false;
+    input.focus();
+  },600+Math.random()*800);
+}
+
+function showOverlay(){
+  var ov=document.createElement('div');
+  ov.className='surrender-overlay';
+  ov.innerHTML='<h2>🏳️ 我投降了 🏳️</h2><p>你太厲害了⋯⋯罵了 '+rounds+' 輪⋯⋯<br>我的怒氣值已經爆表了⋯⋯<br>這場戰鬥是你贏了⋯⋯</p><button onclick="restart()">再來一局</button>';
+  document.getElementById('app').appendChild(ov);
+}
+
+function restart(){
+  var ov=document.querySelector('.surrender-overlay');
+  if(ov) ov.remove();
+  rage=0;rounds=0;surrendered=false;cooldown=false;
+  chat.innerHTML='';
+  rageFill.style.width='0%';
+  rageFill.parentElement.style.animation='';
+  sendBtn.disabled=false;
+  input.disabled=false;
+  addMsg('哼⋯⋯又來了？這次我不會手下留情了 🔥','bot');
+}
+
+input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();userSend();}});
+addMsg(opening,'bot');
+input.focus();
+</script>
+</body>
+</html>
