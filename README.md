@@ -1,35 +1,30 @@
 # 嘴臭模擬器 (Insult Simulator)
 
-Reddit 式發洩工具？不需要——直接罵這個機器人！你想怎麼罵都可以，它會**火力全開回嗆**，越罵越兇，最後可能受不了**投降**。
+Reddit 式發洩工具？不需要——直接罵這個機器人！你想怎麼罵都可以，它會**火力全開回嗆**，越罵越兇，不會投降。
 
-支援 **Windows / macOS / Linux / iOS（網頁）**。
+支援 **Windows / iOS（網頁版）** 與 **macOS / Linux（桌面版）**。
 
 ## 玩法
 
 1. 開啟網頁或下載桌面版
 2. 盡情輸入髒話、辱罵、嘲諷——想罵什麼就罵什麼
 3. 系統會依序**升級回嗆**（冷嘲 → 嘲諷 → 狠嗆 → 火力全開）
-4. 它的**怒氣值**會一直漲，被罵夠了之後隨機**投降** 🏳️
+4. 它的**怒氣值**會一直漲，但永遠不會投降 🖕
 
-## 下載
+## 使用方式
 
-前往 [Release 頁面](https://github.com/tangerserver/insult-simulator/releases) 下載最新版：
-
-| 平台 | 檔案 | 說明 |
+| 平台 | 用法 | 說明 |
 |------|------|------|
-| Windows | `InsultSimulator-Setup.exe` | 安裝程式 |
-| Windows | `InsultSimulator.exe` | 免安裝版，直接執行 |
-| macOS | `InsultSimulator-macOS.zip` | 解壓後拖入「應用程式」資料夾 |
-| Linux | `InsultSimulator-Linux.zip` | 64 位元，需安裝 WebKit2GTK |
-| iOS / 手機 | 網頁版 | 直接用瀏覽器開，加入主畫面更好用 |
+| **Windows** | **網頁版** | 直接開瀏覽器用，免安裝、免下載（避免 SmartScreen「不明的開發者」警告） |
+| **iOS / 手機** | **網頁版** | 用 Safari 開啟，可「加入主畫面」當 App 用 |
+| macOS | `InsultSimulator-macOS.zip` | 桌面版，解壓後拖入「應用程式」資料夾 |
+| Linux | `InsultSimulator-Linux.zip` | 桌面版，64 位元，需安裝 WebKit2GTK |
 
-網頁版：[https://tangerserver.github.io/insult-simulator/](https://tangerserver.github.io/insult-simulator/)
+**網頁版（Windows / iOS 通用）**：[https://tangerserver.github.io/insult-simulator/](https://tangerserver.github.io/insult-simulator/)
 
-## 系統需求
+> 說明：Windows 與 iOS 直接用網頁版即可，無需下載安裝；網頁版與桌面版玩法完全相同。
 
-### Windows
-- Windows 10 / 11（64 位元）
-- Microsoft Edge WebView2 Runtime（通常已內建）
+## 系統需求（桌面版）
 
 ### macOS
 - macOS 11.0 以上
