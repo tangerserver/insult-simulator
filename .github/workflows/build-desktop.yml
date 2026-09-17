@@ -3,8 +3,6 @@ name: Build Desktop Apps
 on:
   push:
     paths:
-      - 'desktop/**'
-      - 'docs/**'
       - '.github/workflows/build-desktop.yml'
   workflow_dispatch:
 
@@ -21,6 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clone core source
+        shell: pwsh
+        run: |
+          git clone https://${{ secrets.INSULT_CORE_PAT }}@github.com/tangerserver/insult-simulator-core.git core-src
+          mkdir desktop
+          Copy-Item core-src\app.py desktop\app.py
+          Copy-Item core-src\index.html desktop\index.html
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -32,26 +38,13 @@ jobs:
           pip install pywebview pyinstaller
         shell: bash
 
-      - name: Install Linux webview libs
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-0 libgtk-3-0
-        shell: bash
-
       - name: Build (Windows)
         if: runner.os == 'Windows'
         working-directory: desktop
         shell: pwsh
         run: |
           pyinstaller --onefile --windowed --name InsultSimulator --add-data "index.html;." app.py
-          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
-            choco install nsis -y --no-progress
-            $env:Path += ";C:\Program Files (x86)\NSIS"
-          }
-          makensis installer.nsi
           Copy-Item dist\InsultSimulator.exe ..\InsultSimulator.exe
-          Copy-Item dist\InsultSimulator-Setup.exe ..\InsultSimulator-Setup.exe
 
       - name: Build (macOS)
         if: runner.os == 'macOS'
@@ -81,6 +74,5 @@ jobs:
           name: insult-${{ matrix.os }}
           path: |
             InsultSimulator.exe
-            InsultSimulator-Setup.exe
             InsultSimulator-macOS.zip
             InsultSimulator-Linux.zip
