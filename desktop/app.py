@@ -48,8 +48,10 @@ def main():
         min_size=(420, 640),
         background_color="#0a0a0f",
         text_select=False,
+        maximized=True,
     )
     threading.Thread(target=dark_title_bar, daemon=True).start()
+    win.events.shown += win.maximize
     webview.start()
 
 
