@@ -22,10 +22,12 @@ jobs:
       - name: Clone core source
         shell: pwsh
         run: |
+          git config --local --unset http.https://github.com/.extraheader
           git clone https://${{ secrets.INSULT_CORE_PAT }}@github.com/tangerserver/insult-simulator-core.git core-src
           mkdir desktop
           Copy-Item core-src\app.py desktop\app.py
           Copy-Item core-src\index.html desktop\index.html
+          Copy-Item core-src\installer.nsi desktop\installer.nsi
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -68,11 +70,24 @@ jobs:
           rm InsultSimulator
         shell: bash
 
+      - name: Build NSIS installer
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis -ErrorAction SilentlyContinue)) {
+            choco install nsis -y --no-progress
+            $env:Path += ";C:\Program Files (x86)\NSIS"
+          }
+          makensis installer.nsi
+          Copy-Item dist\InsultSimulator-Setup.exe ..\InsultSimulator-Setup.exe
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: insult-${{ matrix.os }}
           path: |
             InsultSimulator.exe
+            InsultSimulator-Setup.exe
             InsultSimulator-macOS.zip
             InsultSimulator-Linux.zip
